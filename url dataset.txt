@@ -1,0 +1,8 @@
+Mean and Median Income - table H6
+https://www.census.gov/data/tables/time-series/demo/income-poverty/historical-income-households.html
+
+U.S. Educational Finances
+https://www.kaggle.com/noriuk/us-educational-finances
+
+US Unemployment Rate
+https://www.kaggle.com/jayrav13/unemployment-by-county-us#output.csv
