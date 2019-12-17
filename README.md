@@ -32,7 +32,7 @@ How does this relation evolves in the last thirty years?
 
 ## _Link to URL where data is from_
 
-[Mean and Median Income.xls] (https://www.census.gov/data/tables/time-series/demo/income-poverty/historical-income-households.html) 
+[U.S. Median Household Income by State.xls] (https://www.census.gov/data/tables/time-series/demo/income-poverty/historical-income-households.html)
 
 [U.S. Educational Finances.csv] (https://www.kaggle.com/noriuk/us-educational-finances)
 
@@ -48,15 +48,14 @@ U.S. Unemployment Rare: This is a dataset that Jay Ravaliya built by scraping th
 
 ## _How many observations (rows) and features (columns) are in your data?_
 
-Mean and Median Income: 230 rows and 6 columns
+U.S. Median household Income by State:
 U.S. Educational Finances: 1276 rows and 11 columns
 U.S. Unemployment Rare: 595 rows and 5 columns
 
 ## _What questions (from above) can be answered using the data in this dataset_
 
-- The US regions that invest the most in Education are the ones that have the most income? 
+- The US regions that invest the most in Education are the ones that have the most income?
 
 - Do the regions in US with a high income have a low unemployment rate?
 
 - Are the regions that invest more in Education the ones that also have a lower unemployment rate?
-
