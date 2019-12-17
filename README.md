@@ -8,15 +8,15 @@ Education, household income and unemployment, how do they relate to each other? 
 
 - [Income, Unemployment, Higher Education and Wellbeing in Times of Economic Crisis: Evidence from Granada (Spain)](https://link.springer.com/article/10.1007/s11205-014-0598-6) - J. Guardiola, M. Guillen-Royo.
 
-Article about how the 2008 crisis affected unemployment, income and education.
+    - Article about how the 2008 crisis affected unemployment, income and education.
 
 - [Unemployment, Inequality and Poverty in Urban China](https://books.google.es/books?hl=es&lr=&id=uXR_AgAAQBAJ&oi=fnd&pg=PP1&dq=education+household+income+unemployment&ots=u3mVhRYCqV&sig=zqTCstR6fAIpROQ2V-zpMP6sJcM#v=onepage&q=education%20household%20income%20unemployment&f=false) – Edited by Li Shi and Hiroshi Hato.
 
-Product of an international joint study, this volume examines the market outcomes in post- reform urban China, focusing on unemployment, inequality and poverty.
+    - Product of an international joint study, this volume examines the market outcomes in post- reform urban China, focusing on unemployment, inequality and poverty.
 
 - [Five Characteristics of Youth Unemployment in Europe: Flexibility, Education, Migration, Family Legacies, and EU Policy](https://journals.sagepub.com/doi/epub/10.1177/2158244015574962) - Jacqueline O’Reilly, Werner Eichhorst, (...)
 
-This is a study of youth unemployment in the labor market of the European Union.
+    - This is a study of youth unemployment in the labor market of the European Union.
 
 ## _Three data-driven questions do you hope to answer about this domain_
 
@@ -48,8 +48,10 @@ U.S. Unemployment Rare: This is a dataset that Jay Ravaliya built by scraping th
 
 ## _How many observations (rows) and features (columns) are in your data?_
 
-Mean and Median Income: 230 rows and 6 columns
+Mean and Median Income: 115 rows and 75 columns (initial dataset)
+
 U.S. Educational Finances: 1276 rows and 11 columns
+
 U.S. Unemployment Rare: 595 rows and 5 columns
 
 ## _What questions (from above) can be answered using the data in this dataset_
