@@ -6,7 +6,9 @@ Education, household income and unemployment, how do they relate to each other? 
 
 ## _Three examples of other data driven projects related to this domain?_
 
-- [Income, Unemployment, Higher Education and Wellbeing in Times of Economic Crisis: Evidence from Granada (Spain)](https://link.springer.com/article/10.1007/s11205-014-0598-6) – J. Guardiola, M. Guillen-Royo.
+- [Income, Unemployment, Higher Education and Wellbeing in Times of Economic Crisis: Evidence from Granada (Spain)](https://link.springer.com/article/10.1007/s11205-014-0598-6) - J. Guardiola, M. Guillen-Royo.
+
+
 
 Article about how the 2008 crisis affected unemployment, income and education.
 
@@ -32,19 +34,19 @@ How does this relation evolves in the last thirty years?
 
 ## _Link to URL where data is from_
 
-[Mean and Median Income.xls] (https://www.census.gov/data/tables/time-series/demo/income-poverty/historical-income-households.html) 
+[Mean and Median Income.xls](https://www.census.gov/data/tables/time-series/demo/income-poverty/historical-income-households.html) 
 
-[U.S. Educational Finances.csv] (https://www.kaggle.com/noriuk/us-educational-finances)
+[U.S. Educational Finances.csv](https://www.kaggle.com/noriuk/us-educational-finances)
 
-[US Unemployment Rate.csv] (https://www.kaggle.com/jayrav13/unemployment-by-county-us/data)
+[US Unemployment Rate.csv](https://www.kaggle.com/jayrav13/unemployment-by-county-us/data)
 
 ## _Description of how was the data collected or generated_
 
-Mean and Median Income: This is a dataset that are provide by the United State Census Bureau.
+Mean and Median Income: This is a dataset that are provide by the United State Census Bureau. 
 
-U.S. Educational Finances: This is a dataset that are provide by Roy Garrard. The United States Census Bureau conducts annual surveys to assess the finances of elementary and high schools.
+U.S. Educational Finances: This is a dataset that are provide by Roy Garrard. The United States Census Bureau conducts annual surveys to assess the finances of elementary and high schools. 
 
-U.S. Unemployment Rare: This is a dataset that Jay Ravaliya built by scraping the United States Department of Labor´s Bureau of Labor Statistics.
+U.S. Unemployment Rare: This is a dataset that Jay Ravaliya built by scraping the United States Department of Labor´s Bureau of Labor Statistics. 
 
 ## _How many observations (rows) and features (columns) are in your data?_
 
