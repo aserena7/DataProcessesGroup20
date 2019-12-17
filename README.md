@@ -20,13 +20,13 @@ Education, household income and unemployment, how do they relate to each other? 
 
 ## _Three data-driven questions do you hope to answer about this domain_
 
-- How does education affect employment in rural vs. urban areas.
+- How does education affect usemployment in states.
 
-- The states/counties with the lowest household income do present higher
+- Do the states with the lowest household income present higher
 unemployment rates?
 
-- Higher school financing equals higher household income and less unemployment?
-How does this relation evolves in the last thirty years?
+- Does the education fincaces affect household income and unemployment rates?
+How does this relation evolves in the last 24 years?
 
 # **Finding Data**
 

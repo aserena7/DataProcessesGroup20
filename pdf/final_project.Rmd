@@ -1,0 +1,28 @@
+---
+title: "[Group 20] Final Project"
+output:
+  pdf_document:
+    toc: true
+---
+
+## Abstract
+
+
+## Introduction and Related Work
+
+
+## Exploratory Data Analysis
+
+  
+## Methods
+
+
+## Results
+
+
+## Discussion and Future Work
+
+
+[//]: # ( This is how you compile the file:                                                                        )
+[//]: # ( setwd("C:/Users/Sebastian/Documents/AGH EAIIB Informatyka/9 Semestr - ERASMUS UPM/Data Processes/repo/pdf/") )
+[//]: # ( rmarkdown::render('final_project.Rmd', 'pdf_document')                                                   )
