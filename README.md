@@ -36,7 +36,7 @@ How does this relation evolves in the last 24 years?
 
 [U.S. Educational Finances.csv](https://www.kaggle.com/noriuk/us-educational-finances)
 
-[US Unemployment Rate.csv](https://www.kaggle.com/jayrav13/unemployment-by-county-us/data)
+[US Unemployment Rate By State.csv](https://www.icip.iastate.edu/tables/employment/unemployment-states)
 
 ## _Description of how was the data collected or generated_
 
@@ -44,7 +44,7 @@ Mean and Median Income: This is a dataset that are provide by the United State C
 
 U.S. Educational Finances: This is a dataset that are provide by Roy Garrard. The United States Census Bureau conducts annual surveys to assess the finances of elementary and high schools.
 
-U.S. Unemployment Rare: This is a dataset that Jay Ravaliya built by scraping the United States Department of Labor´s Bureau of Labor Statistics. The United States Census Bureau collect information by survey and then analyzes and publishes this data.
+U.S. Unemployment Rate: This is a dataset that was created by Local Area Unemployment Statistics, U.S. Bureau of Labor Statistics (BLS) and prepared by Iowa State University. It was made based on current employment status of the US citizens.
 
 ## _How many observations (rows) and features (columns) are in your data?_
 
@@ -52,7 +52,7 @@ Mean and Median Income: 115 rows and 75 columns (initial dataset)
 
 U.S. Educational Finances: 1276 rows and 11 columns
 
-U.S. Unemployment Rare: 595 rows and 5 columns
+U.S. Unemployment Rate: 100 rows and 31 columns (initial dataset)
 
 ## _What questions (from above) can be answered using the data in this dataset_
 
