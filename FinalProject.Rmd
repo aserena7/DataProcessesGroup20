@@ -1,0 +1,735 @@
+---
+title: '[Group 20] Final Project'
+author: "Elisa Mateos, Sebastian Skoczeń, Serena Alderisi, Yass Al Bahri"
+output:
+  html_document:
+    df_print: paged
+    toc: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Abstract 
+
+In this work authors are attempting to check if there is a correlation between the education finances,household income affect the unemployment rate. The results didn't indicate any strong relation, what confirms the findings 
+
+## Introduction and Related Work 
+
+Since the beginning of civilisation, knowledge was considered to be invaluable. “You give a poor man a fish and you feed him for a day. You teach him to fish and you give him an occupation that will feed him for a lifetime.” - a saying that has roots in the ancient chainese culture is one of the causes of this perspective. Nowadays with the current data availability and technologies, we are able to actually check what is the influence of the education on tested population. In this work, we will focus on United States citizens because of big amounts of reliable data gathered by the U.S. Census Bureau and U.S. Bureau of Labor Statistics.
+
+In 2018 over 69% of Americans had a college degree, over 43% of them obtained a bachelor’s degree, finally 26% and 6.5% of those with a bachelor’s degree obtained master’s and doctoral degree respectively. This compares to 42.9% of the population that had a college degree in 1992 and a huge increase from only 25% of the population that had a college degree in 1940.<sup>1</sup> Additionally George Psacharopoulos in his article concluded that a high school dropout earns about $260,000 less over a lifetime than a high school graduate which can have a significant effect on the household income overall.<sup>2</sup> Education in the U.S., however, is an expensive investment, frequently reaching hundreds of thousands of dollars and a lot of Americans are asking themselves a question if it’s worth it.
+
+Another factor that is influencing education among the population is the distribution of finances and state spendings on this matter. The research conducted by Murray, William and Schwab indicates that the financial reform that took place over 20 years ago, led states to increase spending for education and leave spending in other areas unchanged, and thus by implication states fund the additional spending on education through higher taxes.<sup>3</sup> It clearly shows that the reform forced increased financing of the educational sector, expecting revenue of the investment in the long run.
+
+Looking at the past years the unemployment rate at the beginning of 1992 was on the 7.3% level compared to 4.1% in January 2018. However, as Montgomery, Zarnowitz and Tiao are proving in their work, over the last century, the U.S. unemployment rate (u) had no consistent trend at all, clearly indicating that it’s dependant on much more variables than just education itself.<sup>4</sup>
+
+Finally, median household income varies based on the educational attainment of the household head and if led by an individual over 25 years of age with a bachelor’s degree or more have incomes that are considerably higher than the national median.<sup>5</sup> This shows a pretty clear correlation, however it does not indicate if educational finances affected this or if the labour market itself did.
+
+Thus the aim of this work is to check how and if the educational finances and the household income affects the unemployment rate in the U.S. For the purpose of this work, a “state” level of granularity has been chosen to represent in a more detailed way the differences between states.
+
+## Exploratory Data Analysis 
+
+Starting from three different data sets, A new data frame is created for this study, based on a selection From the previous data sets. Median income in current dollars is picked from the Mean and Median data set. From the unemployment data set, the Unemployment rate by stated is included. From the U.S. Educational Finances, the variables kept for this study are the following:
+
+- Total revenue
+- Federal revenue
+- State revenue
+- Local revenue
+- Total expenditure
+- Instruction expenditure
+- Support services expenditure
+- Other expenditure
+- Capital outlay expenditure
+
+Additionally, the data set is normalized for the values of States and year.
+
+After cleaning the dataset we proceed to explore it visually.
+
+```{R echo=FALSE, message=FALSE, results='hide'}
+
+
+# Libraries
+library(ggplot2)
+library(stats)
+library(dplyr)
+library(plotly)
+library(hrbrthemes)
+library(rgl)
+library(lattice)
+library(caret)
+
+# Read the dataset form CSV
+finances <- read.csv("./data/merged_dataset.csv",head=TRUE, sep=";",dec=",",stringsAsFactors=FALSE)
+
+# Correct the type of STATE, ENROLL and OTHER_EXPENDITURE columns
+finances$STATE <- as.factor(finances$STATE)
+finances$ENROLL <- as.numeric(finances$ENROLL)
+finances$OTHER_EXPENDITURE <- as.numeric(finances$OTHER_EXPENDITURE)
+
+# Omit NA's
+us_finances <- na.omit(finances)
+
+unemployment_rate <- us_finances$Unemployment.Rate
+us_finances <- mutate(us_finances, unemployment_rate)
+summary(us_finances)
+
+# plot
+us_finances %>% 
+  ggplot( aes(x= YEAR, y= unemployment_rate)) +
+  geom_line(color="#69b3a2") +
+  ylim(0,15) +
+  geom_hline(yintercept=4.3, color="orange", size=.5) +
+  theme_ipsum()
+
+# Define the variable unemployment as True or False. We are going to focus on the 1st Qu.
+unemployment <- ifelse( us_finances$unemployment_rate >= 4.3, "TRUE", "FALSE")
+us_finances <- mutate(us_finances, unemployment)
+
+# MACHINE LEARNING
+task <- mlr::makeClassifTask(id = "US Finances", data = us_finances, target = "unemployment", positive = "TRUE")
+task # Analysis the data
+
+#  K-Nearest Neighbors
+
+ggplot(data = us_finances) +
+  geom_histogram(
+    mapping = aes(x = Median.Income, fill = unemployment),
+    alpha = .7,
+    position = "identity",
+    binwidth = 1
+  )
+
+# Training
+trainIndex <- createDataPartition(us_finances$unemployment,
+                                  p = .8,
+                                  list = FALSE,
+                                  times = 1
+)
+
+training_set <- us_finances[ trainIndex, ]
+test_set <- us_finances[ -trainIndex, ]
+
+basic_fit <- caret::train(unemployment ~ ., data = training_set, method = "knn")
+
+basic_preds <- predict(basic_fit, test_set)
+
+fitControl <- trainControl(
+  method = "cv",
+  number = 10
+)
+
+fit_with_cv <- caret::train(
+  unemployment ~ .,
+  data = training_set,
+  method = "knn",
+  trControl = fitControl
+)
+
+fit_cv_preds <- predict(fit_with_cv, test_set)
+
+unemployment_factor <- as.factor(test_set$unemployment)
+
+confusionMatrix(unemployment_factor, fit_cv_preds, positive = "TRUE")
+
+grid <- expand.grid(k = 1:20)
+
+fit_cv_grid <- caret::train(
+  unemployment ~ .,
+  data = training_set,
+  method = "knn",
+  trControl = fitControl,
+  tuneGrid = grid
+)
+
+preds_cv_grid <- predict(fit_cv_grid, test_set)
+
+confusionMatrix(unemployment_factor, preds_cv_grid, positive = "TRUE")
+
+
+# Logistic Regression
+library(mlr)
+library(rgl)
+library(lattice)
+library(caret)
+set.seed(1000)
+
+ParamHelpers::getParamSet("classif.logreg")
+learner_log <- makeLearner("classif.logreg",
+                           predict.type = "response")
+
+mod_log <- mlr::train (learner_log, task)
+getLearnerModel(mod_log)
+
+predict_log <- predict(mod_log, task)
+calculateConfusionMatrix(predict_log)
+
+# Classification tree
+
+
+getParamSet("classif.rpart")
+learner_bctree <- makeLearner("classif.rpart", 
+                              predict.type = "response")
+learner_bctree$par.set #same as getparamset
+
+mod_bctree <- mlr::train(learner_bctree, task)
+getLearnerModel(mod_bctree)
+
+
+predict_bctree <- predict(mod_bctree, task = task)
+head(as.data.frame(predict_bctree))
+conf_matrix_bctree <- calculateConfusionMatrix(predict_bctree)
+conf_matrix_bctree
+```
+
+```{R echo=FALSE, message=F}
+library(tidyr)
+library(ggplot2)
+library(dplyr)
+library(png)
+library(gifski)
+library(ggplot2)
+theme_set(theme_bw())
+
+#Read the csv file
+Unemployment <- read.csv("./data/merged_dataset.csv",head=TRUE, sep=";",dec=",")
+
+```
+
+1. First of all, to get a grasp of how unemployment affected the US in the last two decades, a couple of simple representations are plotted.
+
+```{R echo=FALSE, message=FALSE}
+
+#Calculate the average of Unemployment and Median Income by year
+df3 <- Unemployment %>%
+  group_by(YEAR) %>%
+  summarise(UnemployR = mean(Unemployment.Rate))
+
+df4 <- Unemployment %>%
+  group_by(YEAR) %>%
+  summarise(mean4 = mean(Median.Income))
+  
+MedUnp <- df3 %>%
+  mutate(MedianInc = df4$mean4)
+
+
+
+p <- ggplot(MedUnp, aes(x = YEAR))
+p <- p + geom_line(aes(y = UnemployR, colour = "Unemployment rate"))
+
+# Adding the Median Income data, transformed to match roughly the range of the Unemployment Rate
+p <- p + geom_line(aes(y = MedianInc/8, colour = "Median Income"))
+
+# Adding the secondary axis and, reverting the above transformation
+p <- p + scale_y_continuous(sec.axis = sec_axis(~.*8, name = "Median Income US"))
+
+# modifying colours and theme options
+p <- p + scale_colour_manual(values = c("blue", "red"))
+p <- p + labs(y = "Unemployment rate (%)",
+              x = "Year",
+              colour = "Variables")
+p <- p + ggtitle("Unemployment Rate")
+MedianvsUnemployment <- p + theme(legend.position = 'right')
+
+MedianvsUnemployment
+```
+
+Analyzing the plot, it is clear that there is some correlation between the two variables. Median Income has been increasing for the last two decades meanwhile, unemployment suffers from spikes that could be blamed on certain periods of economic disarray, e.g the 2008 economic crisis impact can be noticed in the 2010 spike. There is a slight decrease in the median household income during the same time. Overall, when the income improves, the unemployment rate tend to increase,
+
+```{R echo=FALSE}
+
+#Calculate the average of Unemployment and Median Income by year
+df5 <- Unemployment %>%
+  group_by(YEAR) %>%
+  summarise(mean5 = mean(TOTAL_EXPENDITURE))
+  
+TotUnp <- df3 %>%
+  mutate(TotalExp = df5$mean5)
+
+p <- ggplot(TotUnp, aes(x = YEAR))
+p <- p + geom_line(aes(y = UnemployR, colour = "Unemployment rate"))
+
+# Adding the Median Income data, transformed to match roughly the range of the Unemployment Rate
+p <- p + geom_line(aes(y = TotalExp/1500000, colour = "Total Expenditure"))
+
+# Adding the secondary axis and, reverting the above transformation
+p <- p + scale_y_continuous(sec.axis = sec_axis(~.*1500000, name = "Capital Spent in education"))
+
+# modifying colours and theme options
+p <- p + scale_colour_manual(values = c("blue", "red"))
+p <- p + labs(y = "Unemployment rate (%)",
+              x = "Year",
+              colour = "Variables")
+p <- p + ggtitle("Capital Spent in Education")
+TotalExpvsUnemployment <- p + theme(legend.position = 'right')
+
+TotalExpvsUnemployment
+```
+
+Similar to the previous segment, unemployment rate increases the most when the capital spent in education decreases. This doesn't mean causation. The employment suffers the most when the economy is suffering. Same goes for the amount of money spent in education. The decrease that can be seen during 2010 can simply be due to the governments affording less capital to spend in education.
+
+2. Calculate the average of Unemployment by state
+
+```{r fig.asp=1, echo=FALSE}
+
+#Calculate the average of Unemployment by state
+df1 <- Unemployment %>%
+  group_by(STATE) %>%
+  summarise(mean_un = mean(Unemployment.Rate))
+
+plot1 <- ggplot(data=df1,aes(x=reorder(STATE,mean_un),y=mean_un)) + 
+  geom_bar(stat ='identity',aes(fill=mean_un)) +
+  coord_flip() + 
+  theme_grey() + 
+  scale_fill_gradient(name="Unemployment Rate by State") +
+  labs(title = 'Average Unemployment Rate by State',
+       y='Unemployment Rate',x='States') + 
+  geom_hline(yintercept = mean(df1$mean_un), size = 0.5, color = 'blue')
+plot1
+
+
+```
+This plot is a ranking of the states from the highest to the lowest unemployment rate. This is done by calculating the average of this variable throught the years.
+
+3. Calculate the average of Median Income by state
+
+```{R fig.asp=1, echo=FALSE}
+
+#Calculate the average of Median Income by state
+df2 <- Unemployment %>%
+  group_by(STATE) %>%
+  summarise(mean_in = mean(Median.Income))
+
+plot2 <- ggplot(data=df2,aes(x=reorder(STATE,mean_in),y=mean_in)) + 
+  geom_bar(stat ='identity',aes(fill=mean_in))+
+  coord_flip() + 
+  theme_grey() + 
+  scale_fill_gradient(name="Median Income by State")+
+  labs(title = 'Average Median Income by State',
+       y='Unemployment Rate',x='States')+ 
+  geom_hline(yintercept = mean(df2$mean_in), size = 0.5, color = 'blue')
+plot2
+```
+Similar to the previous one, this plot is a ranking of the states. In this case they are ranked based on the average median household income in the last two decades.
+
+4. Animating a plot throught time to represent Median Income and Unemployment Rate
+
+```{r echo=FALSE}
+library(gganimate)
+
+#n <- ggplot(
+#  Unemployment, 
+#  aes(x = Median.Income, y=Unemployment.Rate, size = TOTAL_REVENUE, colour = STATE)
+#) +
+#  geom_point(show.legend = FALSE, alpha = 0.7) +
+#  scale_color_viridis_d() +
+#  scale_size(range = c(2, 12)) +
+#  scale_x_log10() +
+#  labs(x = "Median Income", y = "Unemployment Rate")
+#    
+#n + transition_time(YEAR) +
+#  labs(title = "Year: {frame_time}")
+```
+Each dot represents a state. The size of the dots are calculated using the total capital revenue of each state, the biggest of them being California. This animation follow the progress of unemployment rate and median household income. It follows somehow the same patterns that the first graph of this analysis does. Most of the stats move forward decreasing in unemployment rate while increasing in median household income until 2010 where the unemployment rate spikes and the the income stops moving forward.
+
+
+5.Animating a plot throught time to represent the total Capital spent in education and Unemployment Rate
+
+```{r echo=FALSE}
+#library(gganimate)
+#
+#n <- ggplot(
+#  Unemployment, 
+#  aes(x = Median.Income, y=Unemployment.Rate, size = TOTAL_REVENUE, colour = STATE)
+#) +
+#  geom_point(show.legend = FALSE, alpha = 0.7) +
+#  scale_color_viridis_d() +
+#  scale_size(range = c(2, 12)) +
+#  scale_x_log10() +
+#  labs(x = "Median Income", y = "Unemployment Rate")
+#    
+#n + transition_time(YEAR) +
+#  labs(title = "Year: {frame_time}")
+```
+Each dot represent a state. The size of the dots are calculated using the total capital revenue of each state, the biggest of them being California. This animation follow the progress of unemployment rate and median household income. It follows somehow the same patterns that the first graph of this analysis does. Most of the stats move forward decreasing in unemployment rate while increasing in median household income until 2010 where the unemployment rate spikes and the the income stops moving forward.
+
+## Methods
+
+**Strength of relationships**
+
+```{r}
+finances <- read.csv("./data/merged_dataset.csv",head=TRUE, sep=";",dec=",",stringsAsFactors=FALSE)
+finances$STATE <- as.factor(finances$STATE)
+```
+
+Before to analyse the strength of relationships between the variables, a new variable is added to the dataset: Profit.
+Profit is the difference between the Total Revenue and the Total Expenditure, so actually the value that give us information about the economic resources available in a State for the Education. 
+
+```{r}
+finances$Profit<-finances$TOTAL_REVENUE-finances$TOTAL_EXPENDITURE
+```
+1.
+
+Since the question of interest is "How does education finances and household income affect the unemployment rate?", the responce variable is The Unemployment Rate and the indipendent variables are Household Income and Profit, the new one.
+We suspect that these variables might affect the Unemployment rate so we checked their relationship with the response variables
+
+
+```{r}
+library(ggplot2)
+ggplot(data = finances) +
+  aes(x = Median.Income, y = Unemployment.Rate)+
+  geom_point()
+
+ggplot(data = finances) +
+  aes(x = Unemployment.Rate , y = Profit)+
+  geom_point()+geom_smooth(method='lm')
+
+```
+ 
+ Looking at the scatter plot of Unemployment Rate and Median Income is possible notice no relation between them, since the data don't follow any pattern. Conversely in the scatter plot bewteen Unemployment rate and the new variable Profit there is a pattern that seems linear.
+ The correlation matrix confirms this behaviour, so the Median Income is drop.
+ 
+```{r}
+numeric_subset<-select(finances, Profit, Median.Income, Unemployment.Rate)
+M<-cor(numeric_subset)
+M
+```
+
+2.
+
+The question of interest is "How does education finances and household income affect the unemployment rate?", but since the linear regression line on the scatter plot seems affected by the choise of considering The Unemployment Rate as response variable and the Household Income as indipendent variables, the Y becomes Profit and the X becomes Unemployment Rate. 
+
+3.
+
+The linear regression is performed: 
+
+Profit= Beta0 + Beta1 * Unemployment Rate
+ 
+```{r}
+mod<-lm(finances$Profit ~ finances$Unemployment.Rate)
+summary(mod)
+```
+
+The intercept is not statistically significant, but the coefficient beta1 yes, since has a low p-value, the null hypothesis is reject, showing evidence that the unemployment rate affects the Profit. Also the F test is statistically significant.
+
+The Rsquared it's pretty low so it means that this model is not a good model. To check that, the next step is the validation of the assumptions on which the regression model is based on: Normality of the residuals, Homoskedasticity of the residuals and Indipendence between the residuals.
+
+```{r}
+library(tseries)
+library(lmtest)
+jarque.bera.test(mod$residuals) 
+bptest(mod)
+dwtest(mod)
+```
+
+The only respected assumption is the one about equal variance between the residuals, since Durbin and Watson test is the only one that has a p value higher that the alpha level. This model is not a good model.
+
+The next step is scaling the value since they have very different range and value and perform again the regression
+
+```{r}
+finances$new_profit=scale(finances$Profit)
+finances$new_rate=scale(finances$Unemployment.Rate)
+mod2<-lm(finances$new_profit ~ finances$new_rate)
+summary(mod2)
+#residuals test
+jarque.bera.test(mod2$residuals) 
+bptest(mod2)
+dwtest(mod2)
+
+```
+
+- **Prediction**:
+
+In this work the variable _"Unemployment_rate"_; has been determined as a variable of interest to be able to predict if a State is going to have unemployment or not depending on its income. To do this, firstly, this variable has been transformed into two classes, _"True"_ and _"False"_. _True_ represents an unemployment rate of more than 4.3% while False represents an unemployment rate of less than 4.3%. This percentage has been determined after a previous analysis in which it can be seen that the normal is to have an unemployment of 4.3% as can be seen in the Figure below.
+
+```{R message=FALSE}
+# Libraries
+library(ggplot2)
+library(caret)
+library(stats)
+library(dplyr)
+library(plotly)
+library(hrbrthemes)
+library(rgl)
+library(lattice)
+
+finances <- read.csv("./data/merged_dataset.csv",head=TRUE, sep=";",dec=",")
+
+sum(is.na(finances))
+us_finances <- na.omit(finances)
+sum(is.na(us_finances))
+
+unemployment_rate <- us_finances$Unemployment.Rate
+us_finances <- mutate(us_finances, unemployment_rate)
+summary(us_finances)
+
+# plot
+us_finances %>% 
+  ggplot( aes(x= YEAR, y= unemployment_rate)) +
+  geom_line(color="#69b3a2") +
+  ylim(0,15) +
+  geom_hline(yintercept=4.3, color="orange", size=.5) +
+  theme_ipsum()
+```
+
+Three supervised classification algorithms have been used to predict the unemployment rate. The first was the K-Nearest Neighbors algorithm, followed by the Logistic Regression model and finally, Classification Tree.
+
+- Splitting your data into testing/training data 
+
+In order to carry out these algorithms, first you go through the phase of testing and training the data. In our case we used 80% in the training phase and 20% in the testing.
+The _createDataPartition_ function is used for the training phase.
+
+```{R}
+trainIndex <- createDataPartition(us_finances$unemployment,
+                                  p = .8,
+                                  list = FALSE,
+                                  times = 1
+)
+```
+
+- Applying cross validation to your model 
+
+Cross-validation is a statistical method used to estimate the skill of machine learning models.
+To carry out cross-validation, the function _trainControl_( method = "cv") and the number of times you want to do it are defined.
+Afterwards, the same training and testing process as before is carried out again.
+
+```{R}
+fitControl <- trainControl(
+  method = "cv",
+  number = 10
+)
+```
+
+- Appropriately handling any missing values 
+
+Before performing the training and extinguishing process, a cleaning process has been carried out, in which the missing values have been eliminated and transformed from the database so that the prediction is much clearer.
+
+```{R}
+sum(is.na(finances))
+us_finances <- na.omit(finances)
+```
+
+- Appropriately using categorical variables 
+
+The use of categorical variables in Machine Learning algorithms is necessary, so at the beginning of its implementation a transformation of the variable of interest to categorical values was performed, leaving the other variables as _int_ or _num_.
+
+```{R}
+unemployment <- ifelse( us_finances$Unemployment.Rate >= 4.3, "True", "False")
+us_finances <- mutate(us_finances, unemployment)
+```
+
+- Using a grid search to find the best parameters for you model of interest 
+
+In order to compare which model is the best, many statistical measures can be made, such as Benchmark, but in this work we have made the ConfusionMatrix, which shows the **True Negative**, **True Positive**, **False Negative** and **False Positive** of the classification method we have performed. In this way the accuracy of the model can be obtained and it can be compared with those of the other models also implemented. The kappa statistician is also a good meter to obtain the reliability of the model.
+
+```{R echo=FALSE, message=FALSE}
+basic_fit <- caret::train(data = training_set,unemployment ~ .,method = "knn")
+
+basic_preds <- predict(basic_fit, test_set)
+
+fitControl <- trainControl(
+  method = "cv",
+  number = 10
+)
+
+fit_with_cv <- caret::train(
+  unemployment ~ .,
+  data = training_set,
+  method = "knn",
+  trControl = fitControl
+)
+
+
+fit_cv_preds <- predict(fit_with_cv, test_set)
+
+trainIndex <- createDataPartition(us_finances$unemployment,
+                                  p = .8,
+                                  list = FALSE,
+                                  times = 1
+)
+
+training_set <- us_finances[ trainIndex, ]
+test_set <- us_finances[ -trainIndex, ]
+
+unemployment_factor <- as.factor(test_set$unemployment)
+```
+
+- Employing the algorithm of interest 
+
+As indicated at the beginning of this section, three algorithms have been applied to predict the variable of interest. _K-Nearest Neighbors_, _Logistic Regression_ and _Classification Trees_. At the bottom you can see how each of the algorithms has been implemented.
+
+
+**KNN**
+```{R}
+fit_cv_grid <- caret::train(
+  unemployment ~ .,
+  data = training_set,
+  method = "knn",
+  trControl = fitControl,
+  tuneGrid = grid
+)
+```
+
+**Logistic Regression**
+
+```{R}
+getParamSet("classif.logreg")
+learner_log <- makeLearner("classif.logreg",
+                           predict.type = "response")
+```
+
+**Classification Tree**
+
+```{R}
+getParamSet("classif.rpart")
+learner_bctree <- makeLearner("classif.rpart", 
+                              predict.type = "response")
+```
+
+## Results 
+
+- **Strength of relationships**:
+
+Also with the scaling, the regression has the same problems of the first one. 
+Since in the scatter plot seems to be present a linear relationship, the next attempt to improve the model is detecting the outliers but we didn't have success to do that. 
+
+- **Predictions**: 
+
+As indicated from the beginning of the project, the objective is to predict what the unemployment rate will be depending on the average income of each of the states. Three algorithms have been implemented for this purpose. The figure below shows the correlation between average income and the variable of interest.
+
+```{R}
+ggplot(data = us_finances) +
+  geom_histogram(
+    mapping = aes(x = Median.Income, fill = unemployment),
+    alpha = .7,
+    position = "identity"
+  )
+```
+
+Before starting the analysis, it is important to clean and prepare the data.
+
+
+```{R}
+# Define the variable unemployment as True or False. We are going to focus on the 1st Qu.
+
+unemployment <- ifelse( us_finances$unemployment_rate >= 4.3, "True", "False")
+
+us_finances <- mutate(us_finances, unemployment)
+
+# MACHINE LEARNING
+
+task <- makeClassifTask(id = "US Finances", data = us_finances, 
+                        target = "unemployment", positive = "True")
+task # Analysis the data
+```
+
+
+**KNN**
+
+```{R}
+unemployment_rate <- as.numeric(us_finances$Unemployment.Rate)
+us_finances <- mutate(us_finances, unemployment_rate)
+ggplot(data = us_finances) +
+  geom_histogram(
+    mapping = aes(x = Median.Income, fill = unemployment),
+    alpha = .7,
+    position = "identity"
+  )
+
+# Training
+trainIndex <- createDataPartition(us_finances$unemployment,
+                                  p = .8,
+                                  list = FALSE,
+                                  times = 1
+)
+
+training_set <- us_finances[ trainIndex, ]
+test_set <- us_finances[ -trainIndex, ]
+
+basic_fit <- caret::train(data = training_set,unemployment ~ .,method = "knn")
+
+basic_preds <- predict(basic_fit, test_set)
+
+fitControl <- trainControl(
+  method = "cv",
+  number = 10
+)
+
+fit_with_cv <- caret::train(
+  unemployment ~ .,
+  data = training_set,
+  method = "knn",
+  trControl = fitControl
+)
+
+
+fit_cv_preds <- predict(fit_with_cv, test_set)
+
+unemployment_factor <- as.factor(test_set$unemployment)
+
+confusionMatrix(unemployment_factor, fit_cv_preds, positive = "True")
+
+grid <- expand.grid(k = 1:20)
+
+fit_cv_grid <- caret::train(
+  unemployment ~ .,
+  data = training_set,
+  method = "knn",
+  trControl = fitControl,
+  tuneGrid = grid
+)
+
+preds_cv_grid <- predict(fit_cv_grid, test_set)
+
+confusionMatrix(unemployment_factor, preds_cv_grid, positive = "True")
+```
+
+**Classification Tree**
+
+```{R}
+ParamHelpers::getParamSet("classif.rpart")
+learner_bctree <- mlr::makeLearner("classif.rpart", 
+                              predict.type = "response")
+learner_bctree$par.set #same as getparamset
+
+mod_bctree <- mlr::train(learner_bctree, task)
+getLearnerModel(mod_bctree)
+
+
+predict_bctree <- predict(mod_bctree, task = task)
+head(as.data.frame(predict_bctree))
+conf_matrix_bctree <- calculateConfusionMatrix(predict_bctree)
+conf_matrix_bctree
+```
+
+
+In all three algorithms they have presented an accuracy of 100% because they are working with a database that presents a small size of variables and the data are clean. But we can still contrast the information with the confusion matrix, which we can see in the figure below. In the upper left cell are the **truly negative** results which state that 291 unemployment are False out of 1224, i. e. 23. 77% of the unemployments are False and the model verifies this. While in the lower right cell are the **truly positive** and indicates that 933 unemployment are True and the model has classified them as True. However, in the top right cell there are **false positives** which indicates that the model has classified the unemployment as False while the unemployment rate was actually True, and in the cell below on the left are the **false negatives**, in this case we have 0 False cells that the model has classified as True.
+
+```{R}
+conf_matrix_bctree <- calculateConfusionMatrix(predict_bctree)
+conf_matrix_bctree
+```
+
+## Discussion and Future Work
+
+
+
+## References
+
+1. https://learningenglish.voanews.com/a/us-census-bureau-americans-are-more-educated-than-ever-before/4546489.html
+
+2. Psacharopoulos, George. (2006). The Value of Investment in Education: Theory, Evidence and Policy. http://lst-iiep.iiep-unesco.org/cgi-bin/wwwi32.exe/[in=epidoc1.in]/?t2000=024211/(100). 32.
+
+3. Evans, William & Murray, Sheila & Schwab, Robert. (1998). Education-Finance Reform and the Distribution of Education Resources. American Economic Review. 88. 789-812.
+
+4. Alan L. Montgomery, Victor Zarnowitz, Ruey S. Tsay & George C. Tiao (1998) Forecasting the U.S. Unemployment Rate, Journal of the American Statistical Association, 93:442, 478-493, DOI: 10.1080/01621459.1998.10473696
+
+5. https://www.pgpf.org/blog/2019/10/income-and-wealth-in-the-united-states-an-overview-of-data
+
+## Authors
+
+- Elisa Mateos
+- Sebastian Skoczeń
+- Serena Alderisi
+- Yass Al Bahri
