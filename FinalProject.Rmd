@@ -13,7 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Abstract 
 
-In this work authors are attempting to check if there is a correlation between the education finances,household income affect the unemployment rate. The results didn't indicate any strong relation, what confirms the findings 
+In this work authors attempted to check if there is a correlation between the education finances,household income affect the unemployment rate. The results didn't indicate any strong relation, what confirms the findings that the unemployment rate behaves without any visible pattern. Because of that this work is focuesd on exploring relations between the education finances, household income and unemployment rate.
 
 ## Introduction and Related Work 
 
@@ -49,8 +49,7 @@ After cleaning the dataset we proceed to explore it visually.
 
 ```{R echo=FALSE, message=FALSE, results='hide'}
 
-
-# Libraries
+# Load Libraries
 library(ggplot2)
 library(stats)
 library(dplyr)
@@ -59,41 +58,42 @@ library(hrbrthemes)
 library(rgl)
 library(lattice)
 library(caret)
+library(mlr)
+library(tidyr)
+library(png)
+library(gifski)
+library(tseries)
+library(lmtest)
+library(gganimate)
 
 # Read the dataset form CSV
-finances <- read.csv("./data/merged_dataset.csv",head=TRUE, sep=";",dec=",",stringsAsFactors=FALSE)
+us_data <- read.csv("./data/merged_dataset.csv",head=TRUE, sep=";",dec=",",stringsAsFactors=FALSE)
 
 # Correct the type of STATE, ENROLL and OTHER_EXPENDITURE columns
-finances$STATE <- as.factor(finances$STATE)
-finances$ENROLL <- as.numeric(finances$ENROLL)
-finances$OTHER_EXPENDITURE <- as.numeric(finances$OTHER_EXPENDITURE)
+us_data$STATE <- as.factor(us_data$STATE)
 
 # Omit NA's
-us_finances <- na.omit(finances)
-
-unemployment_rate <- us_finances$Unemployment.Rate
-us_finances <- mutate(us_finances, unemployment_rate)
-summary(us_finances)
+us_data <- na.omit(us_data)
 
 # plot
-us_finances %>% 
-  ggplot( aes(x= YEAR, y= unemployment_rate)) +
+us_data %>% 
+  ggplot( aes(x= YEAR, y= Unemployment.Rate)) +
   geom_line(color="#69b3a2") +
   ylim(0,15) +
   geom_hline(yintercept=4.3, color="orange", size=.5) +
   theme_ipsum()
 
 # Define the variable unemployment as True or False. We are going to focus on the 1st Qu.
-unemployment <- ifelse( us_finances$unemployment_rate >= 4.3, "TRUE", "FALSE")
-us_finances <- mutate(us_finances, unemployment)
+unemployment <- ifelse( us_data$Unemployment.Rate >= 4.3, "TRUE", "FALSE")
+us_data <- mutate(us_data, unemployment)
 
 # MACHINE LEARNING
-task <- mlr::makeClassifTask(id = "US Finances", data = us_finances, target = "unemployment", positive = "TRUE")
+task <- mlr::makeClassifTask(id = "US Finances", data = us_data, target = "unemployment", positive = "TRUE")
 task # Analysis the data
 
 #  K-Nearest Neighbors
 
-ggplot(data = us_finances) +
+ggplot(data = us_data) +
   geom_histogram(
     mapping = aes(x = Median.Income, fill = unemployment),
     alpha = .7,
@@ -102,14 +102,14 @@ ggplot(data = us_finances) +
   )
 
 # Training
-trainIndex <- createDataPartition(us_finances$unemployment,
+trainIndex <- createDataPartition(us_data$unemployment,
                                   p = .8,
                                   list = FALSE,
                                   times = 1
 )
 
-training_set <- us_finances[ trainIndex, ]
-test_set <- us_finances[ -trainIndex, ]
+training_set <- us_data[ trainIndex, ]
+test_set <- us_data[ -trainIndex, ]
 
 basic_fit <- caret::train(unemployment ~ ., data = training_set, method = "knn")
 
@@ -149,10 +149,6 @@ confusionMatrix(unemployment_factor, preds_cv_grid, positive = "TRUE")
 
 
 # Logistic Regression
-library(mlr)
-library(rgl)
-library(lattice)
-library(caret)
 set.seed(1000)
 
 ParamHelpers::getParamSet("classif.logreg")
@@ -166,8 +162,6 @@ predict_log <- predict(mod_log, task)
 calculateConfusionMatrix(predict_log)
 
 # Classification tree
-
-
 getParamSet("classif.rpart")
 learner_bctree <- makeLearner("classif.rpart", 
                               predict.type = "response")
@@ -183,30 +177,16 @@ conf_matrix_bctree <- calculateConfusionMatrix(predict_bctree)
 conf_matrix_bctree
 ```
 
-```{R echo=FALSE, message=F}
-library(tidyr)
-library(ggplot2)
-library(dplyr)
-library(png)
-library(gifski)
-library(ggplot2)
-theme_set(theme_bw())
-
-#Read the csv file
-Unemployment <- read.csv("./data/merged_dataset.csv",head=TRUE, sep=";",dec=",")
-
-```
-
 1. First of all, to get a grasp of how unemployment affected the US in the last two decades, a couple of simple representations are plotted.
 
 ```{R echo=FALSE, message=FALSE}
 
 #Calculate the average of Unemployment and Median Income by year
-df3 <- Unemployment %>%
+df3 <- us_data %>%
   group_by(YEAR) %>%
   summarise(UnemployR = mean(Unemployment.Rate))
 
-df4 <- Unemployment %>%
+df4 <- us_data %>%
   group_by(YEAR) %>%
   summarise(mean4 = mean(Median.Income))
   
@@ -240,7 +220,7 @@ Analyzing the plot, it is clear that there is some correlation between the two v
 ```{R echo=FALSE}
 
 #Calculate the average of Unemployment and Median Income by year
-df5 <- Unemployment %>%
+df5 <- us_data %>%
   group_by(YEAR) %>%
   summarise(mean5 = mean(TOTAL_EXPENDITURE))
   
@@ -274,7 +254,7 @@ Similar to the previous segment, unemployment rate increases the most when the c
 ```{r fig.asp=1, echo=FALSE}
 
 #Calculate the average of Unemployment by state
-df1 <- Unemployment %>%
+df1 <- us_data %>%
   group_by(STATE) %>%
   summarise(mean_un = mean(Unemployment.Rate))
 
@@ -297,7 +277,7 @@ This plot is a ranking of the states from the highest to the lowest unemployment
 ```{R fig.asp=1, echo=FALSE}
 
 #Calculate the average of Median Income by state
-df2 <- Unemployment %>%
+df2 <- us_data %>%
   group_by(STATE) %>%
   summarise(mean_in = mean(Median.Income))
 
@@ -316,20 +296,19 @@ Similar to the previous one, this plot is a ranking of the states. In this case 
 4. Animating a plot throught time to represent Median Income and Unemployment Rate
 
 ```{r echo=FALSE}
-library(gganimate)
 
-#n <- ggplot(
-#  Unemployment, 
-#  aes(x = Median.Income, y=Unemployment.Rate, size = TOTAL_REVENUE, colour = STATE)
-#) +
-#  geom_point(show.legend = FALSE, alpha = 0.7) +
-#  scale_color_viridis_d() +
-#  scale_size(range = c(2, 12)) +
-#  scale_x_log10() +
-#  labs(x = "Median Income", y = "Unemployment Rate")
-#    
-#n + transition_time(YEAR) +
-#  labs(title = "Year: {frame_time}")
+n <- ggplot(
+  us_data, 
+  aes(x = Median.Income, y=Unemployment.Rate, size = TOTAL_REVENUE, colour = STATE)
+) +
+  geom_point(show.legend = FALSE, alpha = 0.7) +
+  scale_color_viridis_d() +
+  scale_size(range = c(2, 12)) +
+  scale_x_log10() +
+  labs(x = "Median Income", y = "Unemployment Rate")
+    
+n + transition_time(YEAR) +
+  labs(title = "Year: {frame_time}")
 ```
 Each dot represents a state. The size of the dots are calculated using the total capital revenue of each state, the biggest of them being California. This animation follow the progress of unemployment rate and median household income. It follows somehow the same patterns that the first graph of this analysis does. Most of the stats move forward decreasing in unemployment rate while increasing in median household income until 2010 where the unemployment rate spikes and the the income stops moving forward.
 
@@ -337,20 +316,19 @@ Each dot represents a state. The size of the dots are calculated using the total
 5.Animating a plot throught time to represent the total Capital spent in education and Unemployment Rate
 
 ```{r echo=FALSE}
-#library(gganimate)
-#
-#n <- ggplot(
-#  Unemployment, 
-#  aes(x = Median.Income, y=Unemployment.Rate, size = TOTAL_REVENUE, colour = STATE)
-#) +
-#  geom_point(show.legend = FALSE, alpha = 0.7) +
-#  scale_color_viridis_d() +
-#  scale_size(range = c(2, 12)) +
-#  scale_x_log10() +
-#  labs(x = "Median Income", y = "Unemployment Rate")
-#    
-#n + transition_time(YEAR) +
-#  labs(title = "Year: {frame_time}")
+
+n <- ggplot(
+  us_data, 
+  aes(x = Median.Income, y=Unemployment.Rate, size = TOTAL_REVENUE, colour = STATE)
+) +
+  geom_point(show.legend = FALSE, alpha = 0.7) +
+  scale_color_viridis_d() +
+  scale_size(range = c(2, 12)) +
+  scale_x_log10() +
+  labs(x = "Median Income", y = "Unemployment Rate")
+    
+n + transition_time(YEAR) +
+  labs(title = "Year: {frame_time}")
 ```
 Each dot represent a state. The size of the dots are calculated using the total capital revenue of each state, the biggest of them being California. This animation follow the progress of unemployment rate and median household income. It follows somehow the same patterns that the first graph of this analysis does. Most of the stats move forward decreasing in unemployment rate while increasing in median household income until 2010 where the unemployment rate spikes and the the income stops moving forward.
 
@@ -358,16 +336,11 @@ Each dot represent a state. The size of the dots are calculated using the total 
 
 **Strength of relationships**
 
-```{r}
-finances <- read.csv("./data/merged_dataset.csv",head=TRUE, sep=";",dec=",",stringsAsFactors=FALSE)
-finances$STATE <- as.factor(finances$STATE)
-```
-
 Before to analyse the strength of relationships between the variables, a new variable is added to the dataset: Profit.
 Profit is the difference between the Total Revenue and the Total Expenditure, so actually the value that give us information about the economic resources available in a State for the Education. 
 
 ```{r}
-finances$Profit<-finances$TOTAL_REVENUE-finances$TOTAL_EXPENDITURE
+us_data$Profit <- us_data$TOTAL_REVENUE-us_data$TOTAL_EXPENDITURE
 ```
 1.
 
@@ -376,12 +349,11 @@ We suspect that these variables might affect the Unemployment rate so we checked
 
 
 ```{r}
-library(ggplot2)
-ggplot(data = finances) +
+ggplot(data = us_data) +
   aes(x = Median.Income, y = Unemployment.Rate)+
   geom_point()
 
-ggplot(data = finances) +
+ggplot(data = us_data) +
   aes(x = Unemployment.Rate , y = Profit)+
   geom_point()+geom_smooth(method='lm')
 
@@ -391,7 +363,7 @@ ggplot(data = finances) +
  The correlation matrix confirms this behaviour, so the Median Income is drop.
  
 ```{r}
-numeric_subset<-select(finances, Profit, Median.Income, Unemployment.Rate)
+numeric_subset<-select(us_data, Profit, Median.Income, Unemployment.Rate)
 M<-cor(numeric_subset)
 M
 ```
@@ -407,7 +379,7 @@ The linear regression is performed:
 Profit= Beta0 + Beta1 * Unemployment Rate
  
 ```{r}
-mod<-lm(finances$Profit ~ finances$Unemployment.Rate)
+mod<-lm(us_data$Profit ~ us_data$Unemployment.Rate)
 summary(mod)
 ```
 
@@ -416,8 +388,6 @@ The intercept is not statistically significant, but the coefficient beta1 yes, s
 The Rsquared it's pretty low so it means that this model is not a good model. To check that, the next step is the validation of the assumptions on which the regression model is based on: Normality of the residuals, Homoskedasticity of the residuals and Indipendence between the residuals.
 
 ```{r}
-library(tseries)
-library(lmtest)
 jarque.bera.test(mod$residuals) 
 bptest(mod)
 dwtest(mod)
@@ -428,9 +398,9 @@ The only respected assumption is the one about equal variance between the residu
 The next step is scaling the value since they have very different range and value and perform again the regression
 
 ```{r}
-finances$new_profit=scale(finances$Profit)
-finances$new_rate=scale(finances$Unemployment.Rate)
-mod2<-lm(finances$new_profit ~ finances$new_rate)
+us_data$new_profit=scale(us_data$Profit)
+us_data$new_rate=scale(us_data$Unemployment.Rate)
+mod2<-lm(us_data$new_profit ~ us_data$new_rate)
 summary(mod2)
 #residuals test
 jarque.bera.test(mod2$residuals) 
@@ -444,29 +414,9 @@ dwtest(mod2)
 In this work the variable _"Unemployment_rate"_; has been determined as a variable of interest to be able to predict if a State is going to have unemployment or not depending on its income. To do this, firstly, this variable has been transformed into two classes, _"True"_ and _"False"_. _True_ represents an unemployment rate of more than 4.3% while False represents an unemployment rate of less than 4.3%. This percentage has been determined after a previous analysis in which it can be seen that the normal is to have an unemployment of 4.3% as can be seen in the Figure below.
 
 ```{R message=FALSE}
-# Libraries
-library(ggplot2)
-library(caret)
-library(stats)
-library(dplyr)
-library(plotly)
-library(hrbrthemes)
-library(rgl)
-library(lattice)
-
-finances <- read.csv("./data/merged_dataset.csv",head=TRUE, sep=";",dec=",")
-
-sum(is.na(finances))
-us_finances <- na.omit(finances)
-sum(is.na(us_finances))
-
-unemployment_rate <- us_finances$Unemployment.Rate
-us_finances <- mutate(us_finances, unemployment_rate)
-summary(us_finances)
-
 # plot
-us_finances %>% 
-  ggplot( aes(x= YEAR, y= unemployment_rate)) +
+us_data %>% 
+  ggplot( aes(x= YEAR, y= Unemployment.Rate)) +
   geom_line(color="#69b3a2") +
   ylim(0,15) +
   geom_hline(yintercept=4.3, color="orange", size=.5) +
@@ -481,7 +431,7 @@ In order to carry out these algorithms, first you go through the phase of testin
 The _createDataPartition_ function is used for the training phase.
 
 ```{R}
-trainIndex <- createDataPartition(us_finances$unemployment,
+trainIndex <- createDataPartition(us_data$unemployment,
                                   p = .8,
                                   list = FALSE,
                                   times = 1
@@ -506,8 +456,7 @@ fitControl <- trainControl(
 Before performing the training and extinguishing process, a cleaning process has been carried out, in which the missing values have been eliminated and transformed from the database so that the prediction is much clearer.
 
 ```{R}
-sum(is.na(finances))
-us_finances <- na.omit(finances)
+us_data <- na.omit(us_data)
 ```
 
 - Appropriately using categorical variables 
@@ -515,8 +464,8 @@ us_finances <- na.omit(finances)
 The use of categorical variables in Machine Learning algorithms is necessary, so at the beginning of its implementation a transformation of the variable of interest to categorical values was performed, leaving the other variables as _int_ or _num_.
 
 ```{R}
-unemployment <- ifelse( us_finances$Unemployment.Rate >= 4.3, "True", "False")
-us_finances <- mutate(us_finances, unemployment)
+unemployment <- ifelse( us_data$Unemployment.Rate >= 4.3, "True", "False")
+us_finances <- mutate(us_data, unemployment)
 ```
 
 - Using a grid search to find the best parameters for you model of interest 
@@ -599,7 +548,7 @@ Since in the scatter plot seems to be present a linear relationship, the next at
 As indicated from the beginning of the project, the objective is to predict what the unemployment rate will be depending on the average income of each of the states. Three algorithms have been implemented for this purpose. The figure below shows the correlation between average income and the variable of interest.
 
 ```{R}
-ggplot(data = us_finances) +
+ggplot(data = us_data) +
   geom_histogram(
     mapping = aes(x = Median.Income, fill = unemployment),
     alpha = .7,
@@ -612,15 +561,12 @@ Before starting the analysis, it is important to clean and prepare the data.
 
 ```{R}
 # Define the variable unemployment as True or False. We are going to focus on the 1st Qu.
-
-unemployment <- ifelse( us_finances$unemployment_rate >= 4.3, "True", "False")
-
+unemployment <- ifelse( us_data$unemployment_rate >= 4.3, "TRUE", "FALSE")
 us_finances <- mutate(us_finances, unemployment)
 
 # MACHINE LEARNING
-
-task <- makeClassifTask(id = "US Finances", data = us_finances, 
-                        target = "unemployment", positive = "True")
+task <- makeClassifTask(id = "US Finances", data = us_data, 
+                        target = "unemployment", positive = "TRUE")
 task # Analysis the data
 ```
 
@@ -628,9 +574,7 @@ task # Analysis the data
 **KNN**
 
 ```{R}
-unemployment_rate <- as.numeric(us_finances$Unemployment.Rate)
-us_finances <- mutate(us_finances, unemployment_rate)
-ggplot(data = us_finances) +
+ggplot(data = us_data) +
   geom_histogram(
     mapping = aes(x = Median.Income, fill = unemployment),
     alpha = .7,
@@ -638,16 +582,16 @@ ggplot(data = us_finances) +
   )
 
 # Training
-trainIndex <- createDataPartition(us_finances$unemployment,
+trainIndex <- createDataPartition(us_data$unemployment,
                                   p = .8,
                                   list = FALSE,
                                   times = 1
 )
 
-training_set <- us_finances[ trainIndex, ]
-test_set <- us_finances[ -trainIndex, ]
+training_set <- us_data[ trainIndex, ]
+test_set <- us_data[ -trainIndex, ]
 
-basic_fit <- caret::train(data = training_set,unemployment ~ .,method = "knn")
+basic_fit <- caret::train(unemployment ~ ., data = training_set, method = "knn")
 
 basic_preds <- predict(basic_fit, test_set)
 
@@ -663,12 +607,11 @@ fit_with_cv <- caret::train(
   trControl = fitControl
 )
 
-
 fit_cv_preds <- predict(fit_with_cv, test_set)
 
 unemployment_factor <- as.factor(test_set$unemployment)
 
-confusionMatrix(unemployment_factor, fit_cv_preds, positive = "True")
+confusionMatrix(unemployment_factor, fit_cv_preds, positive = "TRUE")
 
 grid <- expand.grid(k = 1:20)
 
@@ -682,7 +625,7 @@ fit_cv_grid <- caret::train(
 
 preds_cv_grid <- predict(fit_cv_grid, test_set)
 
-confusionMatrix(unemployment_factor, preds_cv_grid, positive = "True")
+confusionMatrix(unemployment_factor, preds_cv_grid, positive = "TRUE")
 ```
 
 **Classification Tree**
@@ -713,7 +656,7 @@ conf_matrix_bctree
 
 ## Discussion and Future Work
 
-
+This results indicates that unemployment rate is indeed not dependant on education finances in particular states or the average household income. In this case the future work should take into consideration more variables to explore the problem from wider perspective.
 
 ## References
 
