@@ -330,7 +330,7 @@ n <- ggplot(
 n + transition_time(YEAR) +
   labs(title = "Year: {frame_time}")
 ```
-Each dot represent a state. The size of the dots are calculated using the total capital revenue of each state, the biggest of them being California. This animation follow the progress of unemployment rate and median household income. It follows somehow the same patterns that the first graph of this analysis does. Most of the stats move forward decreasing in unemployment rate while increasing in median household income until 2010 where the unemployment rate spikes and the the income stops moving forward.
+Similar to the previous animated plot, each dot represent a state. This animation follow the progress of unemployment rate and the total expenditure. In this animation it can be seen how the total amount of money spent is increasing each year while unemployment follows the same pattern from the first plot of this study. It is noticeable how most states react almost the same way to the shifts in unemployment throught time.
 
 ## Methods
 
