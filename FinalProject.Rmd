@@ -319,13 +319,13 @@ Each dot represents a state. The size of the dots are calculated using the total
 
 n <- ggplot(
   us_data, 
-  aes(x = Median.Income, y=Unemployment.Rate, size = TOTAL_REVENUE, colour = STATE)
+  aes(x = TOTAL_EXPENDITURE, y=Unemployment.Rate, size = TOTAL_REVENUE, colour = STATE)
 ) +
   geom_point(show.legend = FALSE, alpha = 0.7) +
   scale_color_viridis_d() +
   scale_size(range = c(2, 12)) +
   scale_x_log10() +
-  labs(x = "Median Income", y = "Unemployment Rate")
+  labs(x = "Total capital spent in Education", y = "Unemployment Rate")
     
 n + transition_time(YEAR) +
   labs(title = "Year: {frame_time}")
